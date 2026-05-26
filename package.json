@@ -5,7 +5,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "queue": "nodemon src/queue.js"
+    "queue": "nodemon src/queue.js",
+    "test": "vitest run"
   },
   "dependencies": {
     "@sentry/node": "5.6.1",
@@ -29,6 +30,11 @@
     "yup": "^0.27.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.9.1",
+    "@types/yup": "^0.29.14",
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.2.0",
     "eslint-config-prettier": "^6.0.0",
@@ -37,6 +43,8 @@
     "nodemon": "^1.19.1",
     "prettier": "^1.18.2",
     "sequelize-cli": "^5.5.0",
-    "sucrase": "^3.10.1"
+    "sucrase": "^3.10.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
   }
 }
