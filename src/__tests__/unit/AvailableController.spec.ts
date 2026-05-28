@@ -43,7 +43,7 @@ describe('AvailableController', () => {
     expect(res.json).toHaveBeenCalledWith(
       expect.arrayContaining([
         expect.objectContaining({ time: '08:00', available: false }), // Past time
-        expect.objectContaining({ time: '11:00', available: true }),  // Future and free
+        expect.objectContaining({ time: '11:00', available: true }), // Future and free
         expect.objectContaining({ time: '14:00', available: false }), // Already booked
       ])
     );

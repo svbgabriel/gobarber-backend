@@ -1,0 +1,83 @@
+services:
+  app:
+    build: .
+    container_name: gobarber_app
+    ports:
+      - "3333:3333"
+    volumes:
+      - .:/usr/app
+      - /usr/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - APP_SECRET=gobarber-secret-node
+      - DB_HOST=db
+      - DB_USER=postgres
+      - DB_PASS=docker
+      - DB_NAME=gobarber
+      - DB_PORT=5432
+      - MONGO_URL=mongodb://mongo:27017/gobarber
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - db
+      - mongo
+      - redis
+    networks:
+      - gobarber-network
+
+  queue:
+    build: .
+    container_name: gobarber_queue
+    command: npm run queue
+    volumes:
+      - .:/usr/app
+      - /usr/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - APP_SECRET=gobarber-secret-node
+      - DB_HOST=db
+      - DB_USER=postgres
+      - DB_PASS=docker
+      - DB_NAME=gobarber
+      - DB_PORT=5432
+      - MONGO_URL=mongodb://mongo:27017/gobarber
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - db
+      - mongo
+      - redis
+    networks:
+      - gobarber-network
+
+  db:
+    image: postgres:17-alpine
+    container_name: gobarber_db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=docker
+      - POSTGRES_DB=gobarber
+    networks:
+      - gobarber-network
+
+  mongo:
+    image: mongo:8.2
+    container_name: gobarber_mongo
+    ports:
+      - "27017:27017"
+    networks:
+      - gobarber-network
+
+  redis:
+    image: redis:alpine
+    container_name: gobarber_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - gobarber-network
+
+networks:
+  gobarber-network:
+    driver: bridge

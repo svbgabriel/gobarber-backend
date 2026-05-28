@@ -18,6 +18,10 @@ class File extends Model {
 
     return this;
   }
+
+  static associate(models) {
+    // To retain compatibility
+  }
 }
 
 export default File;

@@ -13,10 +13,16 @@ class Queue {
 
   init() {
     jobs.forEach(({ key, handle }) => {
+      const bee = new Bee(key, {
+        redis: redisConfig,
+      });
+
+      bee.on('error', err => {
+        console.log(`Queue ${key}: ERROR`, err);
+      });
+
       this.queues[key] = {
-        bee: new Bee(key, {
-          redis: redisConfig,
-        }),
+        bee,
         handle,
       };
     });
