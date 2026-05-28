@@ -1,11 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import SessionController from '../../app/controllers/SessionController';
-import User from '../../app/models/User';
+import { db } from '../../database/db';
 
-vi.mock('../../app/models/User');
+vi.mock('../../database/db', () => ({
+  db: {
+    query: {
+      users: {
+        findFirst: vi.fn(),
+      },
+    },
+  },
+}));
+
 vi.mock('jsonwebtoken');
+vi.mock('bcryptjs');
 
 describe('SessionController', () => {
   let req: Partial<Request>;
@@ -36,17 +47,18 @@ describe('SessionController', () => {
       email: credentials.email,
       provider: false,
       avatar: null,
-      checkPassword: vi.fn().mockResolvedValue(true),
+      password_hash: 'hashed_password',
     };
 
-    (User.findOne as any).mockResolvedValue(userMock);
+    (db.query.users.findFirst as any).mockResolvedValue(userMock);
+    (bcrypt.compare as any).mockResolvedValue(true);
     (jwt.sign as any).mockReturnValue('mocked_token');
 
     // Act
     await SessionController.store(req as Request, res as Response);
 
     // Assert
-    expect(userMock.checkPassword).toHaveBeenCalledWith(credentials.password);
+    expect(bcrypt.compare).toHaveBeenCalledWith(credentials.password, 'hashed_password');
     expect(res.json).toHaveBeenCalledWith({
       user: {
         id: 1,
@@ -84,7 +96,7 @@ describe('SessionController', () => {
       },
     };
 
-    (User.findOne as any).mockResolvedValue(null);
+    (db.query.users.findFirst as any).mockResolvedValue(null);
 
     // Act
     await SessionController.store(req as Request, res as Response);
@@ -106,10 +118,11 @@ describe('SessionController', () => {
     };
 
     const userMock = {
-      checkPassword: vi.fn().mockResolvedValue(false),
+      password_hash: 'hashed_password',
     };
 
-    (User.findOne as any).mockResolvedValue(userMock);
+    (db.query.users.findFirst as any).mockResolvedValue(userMock);
+    (bcrypt.compare as any).mockResolvedValue(false);
 
     // Act
     await SessionController.store(req as Request, res as Response);

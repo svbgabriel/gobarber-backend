@@ -11,7 +11,7 @@ import NotificationController from './app/controllers/NotificationController';
 import AvailableController from './app/controllers/AvailableController';
 import authMiddleware from './app/middlewares/auth';
 
-const routes = new Router();
+const routes = Router();
 const upload = multer(multerConfig);
 
 routes.post('/users', UserController.store);

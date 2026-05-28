@@ -7,12 +7,12 @@ import {
   StartedMongoDBContainer,
 } from '@testcontainers/mongodb';
 import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis';
-import { Sequelize } from 'sequelize';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
+import path from 'path';
 
 let postgresContainer: StartedPostgreSqlContainer;
 let mongoContainer: StartedMongoDBContainer;
 let redisContainer: StartedRedisContainer;
-let sequelize: Sequelize;
 
 export const startContainers = async () => {
   // Start Postgres
@@ -44,44 +44,28 @@ export const startContainers = async () => {
 
   // Update the config object directly so the singleton picks it up
   databaseConfig.host = postgresContainer.getHost();
-  databaseConfig.port = postgresContainer.getMappedPort(5432).toString();
-  databaseConfig.username = postgresContainer.getUsername();
+  databaseConfig.port = postgresContainer.getMappedPort(5432);
+  databaseConfig.user = postgresContainer.getUsername();
   databaseConfig.password = postgresContainer.getPassword();
   databaseConfig.database = postgresContainer.getDatabase();
 
-  const User = (await import('../../../src/app/models/User')).default;
-  const File = (await import('../../../src/app/models/File')).default;
-  const Appointment = (await import('../../../src/app/models/Appointment'))
-    .default;
+  const { db } = await import('../../../src/database/db');
 
-  sequelize = new Sequelize({
-    dialect: 'postgres',
-    host: postgresContainer.getHost(),
-    port: postgresContainer.getMappedPort(5432),
-    username: postgresContainer.getUsername(),
-    password: postgresContainer.getPassword(),
-    database: postgresContainer.getDatabase(),
-    define: databaseConfig.define,
-    logging: false,
+  // Run Drizzle migrations
+  await migrate(db, {
+    migrationsFolder: path.join(__dirname, '../../database/migrations_drizzle'),
   });
 
-  const models = [User, File, Appointment];
-  models
-    .map((model) => model.init(sequelize))
-    .map((model) => model.associate && model.associate(sequelize.models));
-
-  await sequelize.authenticate();
-  await sequelize.sync({ force: true });
-
-  // Reinicializar o singleton do database para garantir que o App use a conexão correta
-  const database = (await import('../../../src/database')).default;
-  database.init();
-
-  return { postgresContainer, mongoContainer, redisContainer, sequelize };
+  return { postgresContainer, mongoContainer, redisContainer };
 };
 
 export const stopContainers = async () => {
-  if (sequelize) await sequelize.close();
+  try {
+    const { closeConnection } = await import('../../../src/database/db');
+    await closeConnection();
+  } catch (err) {
+    // Ignore if not yet initialized
+  }
   if (postgresContainer) await postgresContainer.stop();
   if (mongoContainer) await mongoContainer.stop();
   if (redisContainer) await redisContainer.stop();

@@ -1,9 +1,14 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Request, Response } from 'express';
 import AvailableController from '../../app/controllers/AvailableController';
-import Appointment from '../../app/models/Appointment';
+import { db } from '../../database/db';
 
-vi.mock('../../app/models/Appointment');
+vi.mock('../../database/db', () => ({
+  db: {
+    select: vi.fn().mockReturnThis(),
+    from: vi.fn().mockReturnThis(),
+    where: vi.fn().mockReturnThis(),
+  },
+}));
 
 describe('AvailableController', () => {
   let req: Partial<Request>;
@@ -32,7 +37,8 @@ describe('AvailableController', () => {
       params: { providerId: '1' },
     };
 
-    (Appointment.findAll as any).mockResolvedValue([
+    // @ts-ignore Just to mock the database connection
+    (db.select().from().where as any).mockResolvedValue([
       { date: new Date(2026, 4, 26, 14, 0, 0) },
     ]);
 

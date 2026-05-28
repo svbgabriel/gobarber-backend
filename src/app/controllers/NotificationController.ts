@@ -1,10 +1,16 @@
+import { Request, Response } from 'express';
+import { eq, and } from 'drizzle-orm';
+import { db } from '../../database/db';
+import { users } from '../../database/schema';
 import Notification from '../schemas/Notification';
-import User from '../models/User';
+import httpContext from 'express-http-context';
 
 class NotificationController {
-  async index(req, res) {
-    const isProvider = await User.findOne({
-      where: { id: req.userId, provider: true },
+  async index(_req: Request, res: Response) {
+    const userId = httpContext.get('userId');
+
+    const isProvider = await db.query.users.findFirst({
+      where: and(eq(users.id, userId), eq(users.provider, true)),
     });
 
     if (!isProvider) {
@@ -14,7 +20,7 @@ class NotificationController {
     }
 
     const notifications = await Notification.find({
-      user: req.userId,
+      user: userId,
     })
       .sort({ createdAt: 'desc' })
       .limit(20);
@@ -22,7 +28,7 @@ class NotificationController {
     return res.json(notifications);
   }
 
-  async update(req, res) {
+  async update(req: Request, res: Response) {
     const notification = await Notification.findByIdAndUpdate(
       req.params.id,
       { read: true },

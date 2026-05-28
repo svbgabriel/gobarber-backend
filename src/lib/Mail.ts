@@ -1,9 +1,25 @@
 import nodemailer from 'nodemailer';
 import { resolve } from 'path';
-import { create } from 'express-handlebars';
+import { create, ExpressHandlebars } from 'express-handlebars';
 import mailConfig from '../config/mail';
 
+interface MailBody {
+  to: string
+  subject: string
+  template: string
+  context: {
+    provider: string
+    user: string
+    date: string
+  },
+  html?: string
+}
+
 class Mail {
+  private transporter: nodemailer.Transporter;
+  private viewPath: string;
+  private viewEngine: ExpressHandlebars;
+
   constructor() {
     const { host, port, secure, auth } = mailConfig;
 
@@ -11,13 +27,9 @@ class Mail {
       host,
       port,
       secure,
-      auth: auth.user ? auth : null,
+      auth: auth.user ? auth : undefined,
     });
 
-    this.configureTemplates();
-  }
-
-  configureTemplates() {
     this.viewPath = resolve(__dirname, '..', 'app', 'views', 'emails');
 
     this.viewEngine = create({
@@ -28,7 +40,7 @@ class Mail {
     });
   }
 
-  async sendMail(message) {
+  async sendMail(message: MailBody) {
     const { template, context, ...rest } = message;
 
     let { html } = message;
@@ -40,7 +52,7 @@ class Mail {
       );
     }
 
-    return this.transporter.sendMail({
+    this.transporter.sendMail({
       ...mailConfig.default,
       ...rest,
       html,

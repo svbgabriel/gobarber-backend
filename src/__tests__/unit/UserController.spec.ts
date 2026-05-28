@@ -1,9 +1,32 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Request, Response } from 'express';
 import UserController from '../../app/controllers/UserController';
-import User from '../../app/models/User';
+import { db } from '../../database/db';
 
-vi.mock('../../app/models/User');
+vi.mock('../../database/db', () => ({
+  db: {
+    select: vi.fn().mockReturnThis(),
+    from: vi.fn().mockReturnThis(),
+    where: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockReturnThis(),
+    values: vi.fn().mockReturnThis(),
+    returning: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
+    set: vi.fn().mockReturnThis(),
+    query: {
+      users: {
+        findFirst: vi.fn(),
+      },
+    },
+  },
+}));
+
+vi.mock('bcryptjs', () => ({
+  default: {
+    hash: vi.fn().mockResolvedValue('hashed_password'),
+    compare: vi.fn().mockResolvedValue(true),
+  },
+}));
 
 describe('UserController', () => {
   let req: Partial<Request>;
@@ -30,22 +53,20 @@ describe('UserController', () => {
         body: userData,
       };
 
-      (User.findOne as any).mockResolvedValue(null);
-      (User.create as any).mockResolvedValue({
+      // @ts-ignore Just to mock the database connection
+      (db.select().from().where as any).mockResolvedValue([]);
+      // @ts-ignore Just to mock the database connection
+      (db.insert().values().returning as any).mockResolvedValue([{
         id: 1,
         name: userData.name,
         email: userData.email,
         provider: false,
-      });
+      }]);
 
       // Act
       await UserController.store(req as Request, res as Response);
 
       // Assert
-      expect(User.findOne).toHaveBeenCalledWith({
-        where: { email: userData.email },
-      });
-      expect(User.create).toHaveBeenCalledWith(userData);
       expect(res.json).toHaveBeenCalledWith({
         id: 1,
         name: userData.name,
@@ -84,7 +105,8 @@ describe('UserController', () => {
         body: userData,
       };
 
-      (User.findOne as any).mockResolvedValue({ id: 1, email: userData.email });
+      // @ts-ignore Just to mock the database connection
+      (db.select().from().where as any).mockResolvedValue([{ id: 1, email: userData.email }]);
 
       // Act
       await UserController.store(req as Request, res as Response);

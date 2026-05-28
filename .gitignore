@@ -2,3 +2,5 @@ node_modules
 temp/uploads/*
 !temp/uploads/.gitkeep
 .env
+.junie
+.DS_Store
